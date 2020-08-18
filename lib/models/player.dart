@@ -1,13 +1,19 @@
 import 'playing_card.dart';
 
 class Player {
-  int playerCardCount = 2;
+  int cardsNeeded = 2;
   List<CardModel> playerCards = [];
-  int handValue = 0;
+
+  int get handValue {
+    int total = 0;
+    playerCards.forEach((card) {
+      total += card.cardValue;
+    });
+    return total;
+  }
 
   void resetPlayer() {
-    playerCardCount = 2;
-    handValue = 0;
+    cardsNeeded = 2;
     playerCards.clear();
   }
 }

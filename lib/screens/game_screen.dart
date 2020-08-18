@@ -20,9 +20,8 @@ class _GameScreenState extends State<GameScreen> {
   Player player2 = Player();
 
   Random random = Random();
-  
-  String gameText = "";
 
+  String gameText = "";
 
   @override
   void initState() {
@@ -33,6 +32,8 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print("player 1: ${player1.playerCards.length}");
+    print("player 2: ${player2.playerCards.length}");
     return Scaffold(
       backgroundColor: Colors.green[600],
       appBar: AppBar(
@@ -96,12 +97,13 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void addCardsToHand(Player player) {
-    for (var i = 0; i < player.playerCardCount; i++) {
+    for (var i = 0; i < player.cardsNeeded; i++) {
       int cardLocation = random.nextInt(deck.length);
       CardModel card = deck[cardLocation];
       player.playerCards.add(card);
       deck.removeAt(cardLocation);
     }
+    player.cardsNeeded = 0;
   }
 
   Widget actionButtons() {
@@ -111,6 +113,8 @@ class _GameScreenState extends State<GameScreen> {
         RaisedButton(
           child: Text("Hit"),
           onPressed: () {
+            player2.cardsNeeded += 1;
+            addCardsToHand(player2);
             setState(() {});
           },
           elevation: 5,
@@ -132,10 +136,13 @@ class _GameScreenState extends State<GameScreen> {
   void calculateWinner(Player player1, Player player2) {
     print("Player 1's hand: ${player1.handValue}");
     print("Player 2's hand: ${player2.handValue}");
-    if (player1.handValue > player2.handValue) {
-      gameText = "Player 1 wins!";
+
+    if (player2.handValue > 21) {
+      gameText = "The dealer wins";
+    } else if (player1.handValue > player2.handValue) {
+      gameText = "The dealer wins";
     } else if (player2.handValue > player1.handValue) {
-      gameText = "Player 2 wins!";
+      gameText = "You win!";
     } else {
       gameText = "It's a tie!";
     }
