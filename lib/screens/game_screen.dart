@@ -16,8 +16,11 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   List<CardModel> deck = [];
 
-  Player player1 = Player();
-  Player player2 = Player();
+  Player player = Player();
+  Player dealer = Player();
+
+  Widget playerHand;
+  Widget dealerHand;
 
   Random random = Random();
 
@@ -28,12 +31,12 @@ class _GameScreenState extends State<GameScreen> {
     super.initState();
     createCards(deck);
     calculateInitialCards();
+    dealerHand = currentHand(dealer.playerCards, hidden: true);
+    playerHand = currentHand(player.playerCards);
   }
 
   @override
   Widget build(BuildContext context) {
-    print("player 1: ${player1.playerCards.length}");
-    print("player 2: ${player2.playerCards.length}");
     return Scaffold(
       backgroundColor: Colors.green[600],
       appBar: AppBar(
@@ -47,22 +50,31 @@ class _GameScreenState extends State<GameScreen> {
             gameText,
             style: TextStyle(color: Colors.white),
           ),
-          playerHand(player1.playerCards),
-          playerHand(player2.playerCards),
+          dealerHand,
+          playerHand,
+          Text(playerTotal, style: TextStyle(color: Colors.white)),
           actionButtons(),
         ],
       ),
     );
   }
 
+  String get playerTotal {
+    return player.handValue > 21
+        ? "Total: ${player.handValue} BUST"
+        : "Total: ${player.handValue}";
+  }
+
   void resetDeck() {
     print("Cards left: ${deck.length}");
     deck.clear();
     createCards(deck);
-    player1.resetPlayer();
-    player2.resetPlayer();
+    dealer.resetPlayer();
+    player.resetPlayer();
     calculateInitialCards();
     gameText = '';
+    dealerHand = currentHand(dealer.playerCards, hidden: true);
+    playerHand = currentHand(player.playerCards);
     setState(() {});
   }
 
@@ -83,11 +95,21 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void calculateInitialCards() {
-    addCardsToHand(player1);
-    addCardsToHand(player2);
+    addCardsToHand(player);
+    addCardsToHand(dealer);
   }
 
-  Widget playerHand(List<CardModel> playerCards) {
+  Widget currentHand(List<CardModel> playerCards, {bool hidden = false}) {
+    if (hidden == true) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          PlayingCard(cardModel: playerCards[0], hidden: true),
+          for (var i = 1; i < playerCards.length; i++)
+            PlayingCard(cardModel: playerCards[i])
+        ],
+      );
+    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -103,6 +125,7 @@ class _GameScreenState extends State<GameScreen> {
       player.playerCards.add(card);
       deck.removeAt(cardLocation);
     }
+    playerHand = currentHand(player.playerCards);
     player.cardsNeeded = 0;
   }
 
@@ -113,15 +136,15 @@ class _GameScreenState extends State<GameScreen> {
         RaisedButton(
           child: Text("Hit"),
           onPressed: () {
-            player2.cardsNeeded += 1;
-            addCardsToHand(player2);
+            player.cardsNeeded += 1;
+            addCardsToHand(player);
             setState(() {});
           },
           elevation: 5,
         ),
         RaisedButton(
           child: Text("Stand"),
-          onPressed: () => calculateWinner(player1, player2),
+          onPressed: () => calculateWinner(player, dealer),
           elevation: 5,
         ),
         RaisedButton(
@@ -133,15 +156,24 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  void calculateWinner(Player player1, Player player2) {
-    print("Player 1's hand: ${player1.handValue}");
-    print("Player 2's hand: ${player2.handValue}");
+  void calculateWinner(Player player, Player dealer) {
+    while (dealer.handValue < 17) {
+      dealer.cardsNeeded += 1;
+      addCardsToHand(dealer);
+    }
+    playerHand = currentHand(player.playerCards);
+    dealerHand = currentHand(dealer.playerCards);
 
-    if (player2.handValue > 21) {
+    print("The dealer's hand: ${dealer.handValue}");
+    print("Your hand: ${player.handValue}");
+
+    if (player.hasBusted) {
       gameText = "The dealer wins";
-    } else if (player1.handValue > player2.handValue) {
+    } else if (!player.hasBusted && dealer.hasBusted) {
+      gameText = "The dealer has busted. You win!";
+    } else if (dealer.handValue > player.handValue) {
       gameText = "The dealer wins";
-    } else if (player2.handValue > player1.handValue) {
+    } else if (player.handValue > dealer.handValue) {
       gameText = "You win!";
     } else {
       gameText = "It's a tie!";

@@ -12,6 +12,10 @@ class Player {
     return total;
   }
 
+  bool get hasBusted {
+    return handValue > 21 ? true : false;
+  }
+
   void resetPlayer() {
     cardsNeeded = 2;
     playerCards.clear();

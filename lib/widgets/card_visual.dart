@@ -5,7 +5,9 @@ import 'package:flutter_icons/flutter_icons.dart';
 class PlayingCard extends StatelessWidget {
   final CardModel cardModel;
 
-  PlayingCard({this.cardModel});
+  final bool hidden;
+
+  PlayingCard({this.cardModel, this.hidden = false});
 
   @override
   Widget build(BuildContext context) {
@@ -16,15 +18,30 @@ class PlayingCard extends StatelessWidget {
           boxShadow: [BoxShadow(offset: Offset(2, 2), blurRadius: 3)]),
       height: 80,
       width: 50,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(_cardNumber(),
-              style: TextStyle(color: _cardColor, fontSize: 16)),
-          Icon(_cardSuit(), color: _cardColor),
-        ],
-      ),
+      child: hidden ? sideDown() : sideUp(),
     );
+  }
+
+  Widget sideUp() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(_cardNumber(), style: TextStyle(color: _cardColor, fontSize: 16)),
+        Icon(_cardSuit(), color: _cardColor),
+      ],
+    );
+  }
+
+  Widget sideDown() {
+    return Container(
+        child: Center(
+          child: Text(
+            "Face Down",
+            style: TextStyle(color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        color: Colors.black);
   }
 
   Color get _cardColor {
