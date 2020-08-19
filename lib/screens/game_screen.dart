@@ -29,7 +29,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    createCards(deck);
+    createDeck(deck);
     calculateInitialCards();
     dealerHand = currentHand(dealer.playerCards, hidden: true);
     playerHand = currentHand(player.playerCards);
@@ -49,6 +49,7 @@ class _GameScreenState extends State<GameScreen> {
           Text(
             gameText,
             style: TextStyle(color: Colors.white),
+            textAlign: TextAlign.center,
           ),
           dealerHand,
           playerHand,
@@ -68,7 +69,7 @@ class _GameScreenState extends State<GameScreen> {
   void resetDeck() {
     print("Cards left: ${deck.length}");
     deck.clear();
-    createCards(deck);
+    createDeck(deck);
     dealer.resetPlayer();
     player.resetPlayer();
     calculateInitialCards();
@@ -78,7 +79,7 @@ class _GameScreenState extends State<GameScreen> {
     setState(() {});
   }
 
-  void createCards(List deck) {
+  void createDeck(List deck) {
     CardSuit.values.forEach((suit) {
       CardNumber.values.forEach((number) {
         deck.add(CardModel(cardNumber: number, cardSuit: suit));
@@ -120,10 +121,12 @@ class _GameScreenState extends State<GameScreen> {
 
   void addCardsToHand(Player player) {
     for (var i = 0; i < player.cardsNeeded; i++) {
-      int cardLocation = random.nextInt(deck.length);
-      CardModel card = deck[cardLocation];
-      player.playerCards.add(card);
-      deck.removeAt(cardLocation);
+      if (player.cardCount < 5) {
+        int cardLocation = random.nextInt(deck.length);
+        CardModel card = deck[cardLocation];
+        player.playerCards.add(card);
+        deck.removeAt(cardLocation);
+      }
     }
     playerHand = currentHand(player.playerCards);
     player.cardsNeeded = 0;
@@ -168,15 +171,15 @@ class _GameScreenState extends State<GameScreen> {
     print("Your hand: ${player.handValue}");
 
     if (player.hasBusted) {
-      gameText = "The dealer wins";
+      gameText = "The dealer wins.\n\nDealer's Total: ${dealer.handValue}";
     } else if (!player.hasBusted && dealer.hasBusted) {
-      gameText = "The dealer has busted. You win!";
+      gameText = "The dealer busted. You win!\n\nDealer's Total: ${dealer.handValue}";
     } else if (dealer.handValue > player.handValue) {
-      gameText = "The dealer wins";
+      gameText = "The dealer wins\n\nDealer's Total: ${dealer.handValue}";
     } else if (player.handValue > dealer.handValue) {
-      gameText = "You win!";
+      gameText = "You win!\n\nDealer's Total: ${dealer.handValue}";
     } else {
-      gameText = "It's a tie!";
+      gameText = "It's a tie!\n\nDealer's Total: ${dealer.handValue}";
     }
     setState(() {});
   }

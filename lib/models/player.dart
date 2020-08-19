@@ -9,11 +9,21 @@ class Player {
     playerCards.forEach((card) {
       total += card.cardValue;
     });
+    for (var card in playerCards) {
+      if (card.cardNumber == CardNumber.ace && total > 21) {
+        total -= 10;
+      }
+    }
+
     return total;
   }
 
   bool get hasBusted {
     return handValue > 21 ? true : false;
+  }
+
+  int get cardCount {
+    return playerCards.length;
   }
 
   void resetPlayer() {
