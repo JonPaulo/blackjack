@@ -50,10 +50,13 @@ class GameScreenState extends State<GameScreen> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Text(
-            gameText,
-            style: TextStyle(color: Colors.white),
-            textAlign: TextAlign.center,
+          Container(
+            height: MediaQuery.of(context).size.height * 0.1,
+            child: Text(
+              gameText,
+              style: TextStyle(color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
           ),
           dealerHand,
           playerHand,
@@ -72,8 +75,10 @@ class GameScreenState extends State<GameScreen> {
 
   void resetDeck() {
     print("Cards left: ${deck.length}");
-    deck.clear();
-    createDeck(deck);
+    if (deck.length < 26) {
+      deck.clear();
+      createDeck(deck);
+    }
     dealer.resetPlayer();
     player.resetPlayer();
     calculateInitialCards();
@@ -135,7 +140,6 @@ class GameScreenState extends State<GameScreen> {
       }
     }
     playerHand = CurrentHand(cards: player.playerCards);
-    setState(() {});
     player.cardsNeeded = 0;
   }
 
@@ -144,23 +148,29 @@ class GameScreenState extends State<GameScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         RaisedButton(
-          child: Text("Hit"),
+          child: Text("Hit", style: TextStyle(color: Colors.white)),
           onPressed: () {
             player.cardsNeeded += 1;
             addCardsToHand(player);
             setState(() {});
           },
           elevation: 5,
+          color: Colors.blue[800],
         ),
         RaisedButton(
           child: Text("Stand"),
           onPressed: () => calculateWinner(player, dealer),
           elevation: 5,
+          color: Colors.white,
         ),
         RaisedButton(
-          child: Text("Reset Deck"),
+          child: Text(
+            "Reset Deck",
+            style: TextStyle(color: Colors.white),
+          ),
           onPressed: resetDeck,
           elevation: 5,
+          color: Colors.red,
         ),
       ],
     );
