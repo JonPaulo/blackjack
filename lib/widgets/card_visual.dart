@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:blackjack/models/playing_card.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 
+import 'package:flip_card/flip_card.dart';
+import '../screens/game_screen.dart';
+
 class PlayingCard extends StatelessWidget {
   final CardModel cardModel;
 
@@ -9,8 +12,47 @@ class PlayingCard extends StatelessWidget {
 
   PlayingCard({this.cardModel, this.hidden = false});
 
+
   @override
   Widget build(BuildContext context) {
+    GameScreenState state = context.findAncestorStateOfType<GameScreenState>();
+    if (hidden) {
+      return FlipCard(
+        key: state.cardKey,
+        flipOnTouch: false,
+        front: Container(
+          decoration: BoxDecoration(
+              border: Border.all(width: 1),
+              color: Colors.white,
+              boxShadow: [BoxShadow(offset: Offset(2, 2), blurRadius: 3)]),
+          height: 80,
+          width: 50,
+          child: sideDown(),
+        ),
+        back: Container(
+          decoration: BoxDecoration(
+              border: Border.all(width: 1),
+              color: Colors.white,
+              boxShadow: [BoxShadow(offset: Offset(2, 2), blurRadius: 3)]),
+          height: 80,
+          width: 50,
+          child: sideUp(),
+        ),
+      );
+    } else {
+      return Container(
+        decoration: BoxDecoration(
+            border: Border.all(width: 1),
+            color: Colors.white,
+            boxShadow: [BoxShadow(offset: Offset(2, 2), blurRadius: 3)]),
+        height: 80,
+        width: 50,
+        child: sideUp(),
+      );
+    }
+  }
+
+  Widget cardSkeleton(Widget side) {
     return Container(
       decoration: BoxDecoration(
           border: Border.all(width: 1),

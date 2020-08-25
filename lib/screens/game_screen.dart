@@ -6,14 +6,16 @@ import 'dart:math';
 
 import 'package:blackjack/models/player.dart';
 
+import 'package:flip_card/flip_card.dart';
+
 class GameScreen extends StatefulWidget {
   static final routeName = '/';
 
   @override
-  _GameScreenState createState() => _GameScreenState();
+  GameScreenState createState() => GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class GameScreenState extends State<GameScreen> {
   List<CardModel> deck = [];
 
   Player player = Player();
@@ -25,6 +27,8 @@ class _GameScreenState extends State<GameScreen> {
   Random random = Random();
 
   String gameText = "";
+  
+  final GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
 
   @override
   void initState() {
@@ -76,6 +80,7 @@ class _GameScreenState extends State<GameScreen> {
     gameText = '';
     dealerHand = currentHand(dealer.playerCards, hidden: true);
     playerHand = currentHand(player.playerCards);
+    cardKey.currentState.controller.reset();
     setState(() {});
   }
 
@@ -100,7 +105,7 @@ class _GameScreenState extends State<GameScreen> {
     addCardsToHand(dealer);
   }
 
-  Widget currentHand(List<CardModel> playerCards, {bool hidden = false}) {
+  Widget currentHand(List<CardModel> playerCards, {bool hidden = false, Key key}) {
     if (hidden == true) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -165,7 +170,9 @@ class _GameScreenState extends State<GameScreen> {
       addCardsToHand(dealer);
     }
     playerHand = currentHand(player.playerCards);
-    dealerHand = currentHand(dealer.playerCards);
+    cardKey.currentState.controller.forward();
+    
+    // dealerHand = currentHand(dealer.playerCards);
 
     print("The dealer's hand: ${dealer.handValue}");
     print("Your hand: ${player.handValue}");
