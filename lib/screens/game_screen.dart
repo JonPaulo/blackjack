@@ -21,13 +21,13 @@ class GameScreenState extends State<GameScreen> {
   Player player = Player();
   Player dealer = Player();
 
-  Widget playerHand;
-  Widget dealerHand;
+  CurrentHand playerHand;
+  CurrentHand dealerHand;
 
   Random random = Random();
 
   String gameText = "";
-  
+
   final GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
 
   @override
@@ -35,12 +35,12 @@ class GameScreenState extends State<GameScreen> {
     super.initState();
     createDeck(deck);
     calculateInitialCards();
-    dealerHand = currentHand(dealer.playerCards, hidden: true);
-    playerHand = currentHand(player.playerCards);
   }
 
   @override
   Widget build(BuildContext context) {
+    dealerHand = CurrentHand(cards: dealer.playerCards, hidden: true);
+    playerHand = CurrentHand(cards: player.playerCards);
     return Scaffold(
       backgroundColor: Colors.green[600],
       appBar: AppBar(
@@ -78,8 +78,8 @@ class GameScreenState extends State<GameScreen> {
     player.resetPlayer();
     calculateInitialCards();
     gameText = '';
-    dealerHand = currentHand(dealer.playerCards, hidden: true);
-    playerHand = currentHand(player.playerCards);
+    dealerHand = CurrentHand(cards: dealer.playerCards, hidden: true);
+    playerHand = CurrentHand(cards: player.playerCards);
     cardKey.currentState.controller.reset();
     setState(() {});
   }
@@ -105,24 +105,25 @@ class GameScreenState extends State<GameScreen> {
     addCardsToHand(dealer);
   }
 
-  Widget currentHand(List<CardModel> playerCards, {bool hidden = false, Key key}) {
-    if (hidden == true) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          PlayingCard(cardModel: playerCards[0], hidden: true),
-          for (var i = 1; i < playerCards.length; i++)
-            PlayingCard(cardModel: playerCards[i])
-        ],
-      );
-    }
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        for (var card in playerCards) PlayingCard(cardModel: card),
-      ],
-    );
-  }
+  // Widget CurrentHand(List<CardModel> playerCards,
+  //     {bool hidden = false, Key key}) {
+  //   if (hidden == true) {
+  //     return Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //       children: [
+  //         PlayingCard(cardModel: playerCards[0], hidden: true),
+  //         for (var i = 1; i < playerCards.length; i++)
+  //           PlayingCard(cardModel: playerCards[i])
+  //       ],
+  //     );
+  //   }
+  //   return Row(
+  //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //     children: [
+  //       for (var card in playerCards) PlayingCard(cardModel: card),
+  //     ],
+  //   );
+  // }
 
   void addCardsToHand(Player player) {
     for (var i = 0; i < player.cardsNeeded; i++) {
@@ -133,7 +134,8 @@ class GameScreenState extends State<GameScreen> {
         deck.removeAt(cardLocation);
       }
     }
-    playerHand = currentHand(player.playerCards);
+    playerHand = CurrentHand(cards: player.playerCards);
+    setState(() {});
     player.cardsNeeded = 0;
   }
 
@@ -169,9 +171,8 @@ class GameScreenState extends State<GameScreen> {
       dealer.cardsNeeded += 1;
       addCardsToHand(dealer);
     }
-    playerHand = currentHand(player.playerCards);
+    playerHand = CurrentHand(cards: player.playerCards);
     cardKey.currentState.controller.forward();
-    
     // dealerHand = currentHand(dealer.playerCards);
 
     print("The dealer's hand: ${dealer.handValue}");
@@ -180,7 +181,8 @@ class GameScreenState extends State<GameScreen> {
     if (player.hasBusted) {
       gameText = "The dealer wins.\n\nDealer's Total: ${dealer.handValue}";
     } else if (!player.hasBusted && dealer.hasBusted) {
-      gameText = "The dealer busted. You win!\n\nDealer's Total: ${dealer.handValue}";
+      gameText =
+          "The dealer busted. You win!\n\nDealer's Total: ${dealer.handValue}";
     } else if (dealer.handValue > player.handValue) {
       gameText = "The dealer wins\n\nDealer's Total: ${dealer.handValue}";
     } else if (player.handValue > dealer.handValue) {
@@ -189,5 +191,44 @@ class GameScreenState extends State<GameScreen> {
       gameText = "It's a tie!\n\nDealer's Total: ${dealer.handValue}";
     }
     setState(() {});
+  }
+}
+
+class CurrentHand extends StatefulWidget {
+  final List<CardModel> cards;
+  final bool hidden;
+
+  CurrentHand({this.cards, this.hidden});
+
+  @override
+  _CurrentHandState createState() => _CurrentHandState();
+}
+
+class _CurrentHandState extends State<CurrentHand> {
+  List cardList = [];
+
+  @override
+  Widget build(BuildContext context) {
+    List<PlayingCard> cardList = [
+      PlayingCard(cardModel: widget.cards[0], hidden: true),
+      for (var i = 1; i < widget.cards.length; i++)
+        PlayingCard(cardModel: widget.cards[i])
+    ];
+    if (widget.hidden == true) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: cardList,
+      );
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        for (var card in widget.cards) PlayingCard(cardModel: card),
+      ],
+    );
+  }
+
+  add(PlayingCard card) {
+    cardList.add(card);
   }
 }
