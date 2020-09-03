@@ -27,14 +27,15 @@ class GameScreenState extends State<GameScreen> {
   Random random = Random();
 
   String gameText = "";
+  Widget currentButtons;
 
   final GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
-
   @override
   void initState() {
     super.initState();
     createDeck(deck);
     calculateInitialCards();
+    currentButtons = actionButtons(false);
   }
 
   @override
@@ -61,7 +62,7 @@ class GameScreenState extends State<GameScreen> {
           dealerHand,
           playerHand,
           Text(playerTotal, style: TextStyle(color: Colors.white)),
-          actionButtons(),
+          currentButtons,
         ],
       ),
     );
@@ -86,6 +87,9 @@ class GameScreenState extends State<GameScreen> {
     dealerHand = CurrentHand(cards: dealer.playerCards, hidden: true);
     playerHand = CurrentHand(cards: player.playerCards);
     cardKey.currentState.controller.reset();
+
+    currentButtons = actionButtons(false);
+
     setState(() {});
   }
 
@@ -141,39 +145,59 @@ class GameScreenState extends State<GameScreen> {
     }
     playerHand = CurrentHand(cards: player.playerCards);
     player.cardsNeeded = 0;
+    calculateBust(player);
   }
 
-  Widget actionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        RaisedButton(
-          child: Text("Hit", style: TextStyle(color: Colors.white)),
-          onPressed: () {
-            player.cardsNeeded += 1;
-            addCardsToHand(player);
-            setState(() {});
-          },
-          elevation: 5,
-          color: Colors.blue[800],
-        ),
-        RaisedButton(
-          child: Text("Stand"),
-          onPressed: () => calculateWinner(player, dealer),
-          elevation: 5,
-          color: Colors.white,
-        ),
-        RaisedButton(
-          child: Text(
-            "Reset Deck",
-            style: TextStyle(color: Colors.white),
+  Widget actionButtons(bool roundEnd) {
+    if (!roundEnd) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          RaisedButton(
+            child: Text("Hit", style: TextStyle(color: Colors.white)),
+            onPressed: () {
+              player.cardsNeeded += 1;
+              addCardsToHand(player);
+              setState(() {});
+            },
+            elevation: 5,
+            color: Colors.blue[800],
           ),
-          onPressed: resetDeck,
-          elevation: 5,
-          color: Colors.red,
+          RaisedButton(
+            child: Text("Stand"),
+            onPressed: () => calculateWinner(player, dealer),
+            elevation: 5,
+            color: Colors.white,
+          ),
+          RaisedButton(
+            child: Text(
+              "Reset Deck",
+              style: TextStyle(color: Colors.white),
+            ),
+            onPressed: resetDeck,
+            elevation: 5,
+            color: Colors.red,
+          ),
+        ],
+      );
+    } else {
+      return RaisedButton(
+        child: Text(
+          "New Game",
+          style: TextStyle(color: Colors.white),
         ),
-      ],
-    );
+        onPressed: resetDeck,
+        elevation: 5,
+        color: Colors.red,
+      );
+    }
+  }
+
+  void calculateBust(Player player) {
+    if (player.handValue > 21) {
+      currentButtons = actionButtons(true);
+      setState(() {});
+    }
   }
 
   void calculateWinner(Player player, Player dealer) {
@@ -184,6 +208,8 @@ class GameScreenState extends State<GameScreen> {
     playerHand = CurrentHand(cards: player.playerCards);
     cardKey.currentState.controller.forward();
     // dealerHand = currentHand(dealer.playerCards);
+
+    currentButtons = actionButtons(true);
 
     print("The dealer's hand: ${dealer.handValue}");
     print("Your hand: ${player.handValue}");
