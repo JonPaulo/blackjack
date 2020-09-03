@@ -41,28 +41,49 @@ class GameScreenState extends State<GameScreen> {
   Widget build(BuildContext context) {
     dealerHand = CurrentHand(cards: dealer.playerCards, hidden: true);
     playerHand = CurrentHand(cards: player.playerCards);
-    return Scaffold(
-      backgroundColor: Colors.green[600],
-      appBar: AppBar(
-        backgroundColor: Colors.green[900],
-        title: Text('Blackjack', style: TextStyle(color: Colors.white)),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Container(
-            height: MediaQuery.of(context).size.height * 0.1,
-            child: Text(
-              gameText,
-              style: TextStyle(color: Colors.white),
-              textAlign: TextAlign.center,
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.green[600],
+        // appBar: AppBar(
+        //   backgroundColor: Colors.green[900],
+        //   title: Text('Blackjack', style: TextStyle(color: Colors.white)),
+        // ),
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Column(
+              children: [
+                Text(
+                  'BLACKJACK',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      shadows: <Shadow>[
+                        Shadow(
+                          offset: Offset(2.0, 2.0),
+                          blurRadius: 3.0,
+                        ),
+                      ]),
+                ),
+                Container(
+                  padding: EdgeInsets.only(top: 20),
+                  height: MediaQuery.of(context).size.height * 0.1,
+                  child: Text(
+                    gameText,
+                    style: TextStyle(color: Colors.white, fontSize: 20),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ),
-          ),
-          dealerHand,
-          playerHand,
-          Text(playerTotal, style: TextStyle(color: Colors.white)),
-          playerActions,
-        ],
+            dealerHand,
+            playerHand,
+            Text(playerTotal,
+                style: TextStyle(color: Colors.white, fontSize: 20)),
+            playerActions,
+          ],
+        ),
       ),
     );
   }
@@ -79,6 +100,7 @@ class GameScreenState extends State<GameScreen> {
       deck.clear();
       createDeck(deck);
     }
+    playerActions = actionButtons(roundEnd: false);
     dealer.resetPlayer();
     player.resetPlayer();
     dealInitialHand();
@@ -87,8 +109,7 @@ class GameScreenState extends State<GameScreen> {
     playerHand = CurrentHand(cards: player.playerCards);
     cardKey.currentState.controller.reset();
 
-    playerActions = actionButtons(roundEnd: false);
-
+    determineBlackjack();
     setState(() {});
   }
 
@@ -103,16 +124,17 @@ class GameScreenState extends State<GameScreen> {
   void dealInitialHand() {
     addCardsToHand(player);
     addCardsToHand(dealer);
+    determineBlackjack();
   }
 
   void addCardsToHand(Player player) {
     for (var i = 0; i < player.cardsNeeded; i++) {
-      if (player.cardCount < 5) {
-        int cardLocation = random.nextInt(deck.length);
-        CardModel card = deck[cardLocation];
-        player.playerCards.add(card);
-        deck.removeAt(cardLocation);
-      }
+      // if (player.cardCount < 5) {
+      int cardLocation = random.nextInt(deck.length);
+      CardModel card = deck[cardLocation];
+      player.playerCards.add(card);
+      deck.removeAt(cardLocation);
+      // }
     }
     playerHand = CurrentHand(cards: player.playerCards);
     player.cardsNeeded = 0;
@@ -141,7 +163,7 @@ class GameScreenState extends State<GameScreen> {
           RaisedButton(
             shape: Border.all(width: 0.5),
             child: Text("Stand"),
-            onPressed: () => calculateWinner(player, dealer),
+            onPressed: () => calculateWinner(player, dealer, blackjack: 0),
             elevation: 5,
             color: Colors.white,
           ),
@@ -171,8 +193,18 @@ class GameScreenState extends State<GameScreen> {
     }
   }
 
-  void calculateWinner(Player player, Player dealer) {
-    while (dealer.handValue < 17) {
+  void determineBlackjack() {
+    if (player.handValue == 21 && dealer.handValue == 21) {
+      calculateWinner(player, dealer, blackjack: 3);
+    } else if (player.handValue == 21) {
+      calculateWinner(player, dealer, blackjack: 1);
+    } else if (dealer.handValue == 21) {
+      calculateWinner(player, dealer, blackjack: 2);
+    }
+  }
+
+  void calculateWinner(Player player, Player dealer, {int blackjack}) {
+    while (dealer.handValue < 17 && blackjack < 1) {
       dealer.cardsNeeded += 1;
       addCardsToHand(dealer);
     }
@@ -195,6 +227,20 @@ class GameScreenState extends State<GameScreen> {
       gameText = "You win!\n\nDealer's Total: ${dealer.handValue}";
     } else {
       gameText = "It's a tie!\n\nDealer's Total: ${dealer.handValue}";
+    }
+
+    switch (blackjack) {
+      case 1:
+        gameText = "BLACKJACK. YOU WIN";
+        break;
+      case 2:
+        gameText = "DEALER HAS BLACKJACK. YOU LOSE";
+        break;
+      case 3:
+        gameText = "PUSH";
+        break;
+      default:
+        break;
     }
     setState(() {});
   }
