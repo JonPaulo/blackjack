@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:blackjack/models/playing_card.dart';
-import 'package:flutter_icons/flutter_icons.dart';
+import 'package:blackjack/screens/game_screen.dart';
 
 import 'package:flip_card/flip_card.dart';
-import '../screens/game_screen.dart';
+import 'package:flutter_icons/flutter_icons.dart';
 
 class PlayingCard extends StatelessWidget {
   final CardModel cardModel;

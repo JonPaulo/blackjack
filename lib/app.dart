@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/game_screen.dart';
+import 'package:blackjack/screens/game_screen.dart';
 
 class App extends StatelessWidget {
   final String title;
