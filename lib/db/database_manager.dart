@@ -34,7 +34,7 @@ class DatabaseManager {
     await db.execute(await rootBundle.loadString(CREATETABLE));
   }
 
-  void saveJournalEntry({StatsDTO dto}) {
+  void addData({StatsDTO dto}) {
     db.transaction((txn) async {
       await txn.rawInsert(
         await rootBundle.loadString(SQL_INSERT),
@@ -65,7 +65,7 @@ class DatabaseManager {
 
     // Update the given Dog.
     await db.update(
-      DATABASE_FILENAME,
+      "blackjack",
       dto.toMap(),
       // Ensure that the Dog has a matching id.
       where: "id = ?",
@@ -73,4 +73,18 @@ class DatabaseManager {
       whereArgs: [dto.id],
     );
   }
+
+  Future<void> clearData(int id) async {
+  // Get a reference to the database.
+
+  // Remove the Dog from the Database.
+  await db.delete(
+    'blackjack',
+    // Use a `where` clause to delete a specific dog.
+    where: "id = ?",
+    // Pass the Dog's id as a whereArg to prevent SQL injection.
+    whereArgs: [id],
+  );
+}
+
 }

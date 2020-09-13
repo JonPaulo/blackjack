@@ -4,6 +4,8 @@ class StatsDTO {
   int computerWins;
   int roundsPlayed;
 
+  StatsDTO({this.id, this.playerWins, this.computerWins, this.roundsPlayed});
+
   get getEntries {
     return 'Stats: $roundsPlayed, $playerWins, $computerWins';
   }

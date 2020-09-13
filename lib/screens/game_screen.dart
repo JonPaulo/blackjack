@@ -32,7 +32,11 @@ class GameScreenState extends State<GameScreen> {
   Widget playerActions;
 
   final _statUpdate = StatsDTO();
-  var statData;
+  Map statData = {
+    "roundsPlayed": 0,
+    "playerWins": 0,
+    "computerWins": 0,
+  };
 
   final GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
   @override
@@ -47,16 +51,46 @@ class GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print("IN BUILD. STAT DATA: $statData");
     dealerHand = CurrentHand(cards: dealer.playerCards, hidden: true);
     playerHand = CurrentHand(cards: player.playerCards);
     return SafeArea(
       child: Scaffold(
+        endDrawer: Drawer(
+          child: ListView(
+            children: [
+              Container(
+                height: 50,
+                child: DrawerHeader(
+                  child: Text(
+                    "Stats",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  margin: EdgeInsets.all(0),
+                ),
+                color: Color(0xFF225374),
+              ),
+              ListTile(
+                  title: Text("Rounds Played: ${statData["roundsPlayed"]}")),
+              ListTile(title: Text("Player Wins: ${statData["playerWins"]}")),
+              ListTile(
+                  title: Text("Computer Wins: ${statData["computerWins"]}")),
+              Container(
+                color: Colors.red,
+                child: ListTile(
+                  visualDensity: VisualDensity.compact,
+                  title: Text("Reset Statistics",
+                      style: TextStyle(color: Colors.grey[100])),
+                  onTap: resetStats,
+                ),
+              ),
+            ],
+          ),
+        ),
         backgroundColor: Colors.green[600],
-        // appBar: AppBar(
-        //   backgroundColor: Colors.green[900],
-        //   title: Text('Blackjack', style: TextStyle(color: Colors.white)),
-        // ),
+        appBar: AppBar(
+          backgroundColor: Colors.green[900],
+          title: Text('Blackjack', style: TextStyle(color: Colors.white)),
+        ),
         body: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -104,6 +138,8 @@ class GameScreenState extends State<GameScreen> {
   }
 
   void resetDeck() {
+    print("Resetting Deck... ");
+    // print("Current Stats 1: ${_statUpdate.toMap()}");
     print("Cards left: ${deck.length}");
     if (deck.length < 26) {
       deck.clear();
@@ -120,6 +156,7 @@ class GameScreenState extends State<GameScreen> {
 
     determineBlackjack();
     setState(() {});
+    // print("Current Stats 2: ${_statUpdate.toMap()}");
   }
 
   void createDeck(List deck) {
@@ -149,6 +186,9 @@ class GameScreenState extends State<GameScreen> {
     player.cardsNeeded = 0;
     if (player.hasBusted) {
       playerActions = actionButtons(roundEnd: true);
+      _statUpdate.computerWins += 1;
+      _statUpdate.roundsPlayed += 1;
+      updateStats();
       setState(() {});
     }
   }
@@ -205,10 +245,13 @@ class GameScreenState extends State<GameScreen> {
   void determineBlackjack() {
     if (player.handValue == 21 && dealer.handValue == 21) {
       calculateWinner(player, dealer, blackjack: 3);
+      print("BLACKJACK DETECTED");
     } else if (player.handValue == 21) {
       calculateWinner(player, dealer, blackjack: 1);
+      print("BLACKJACK DETECTED");
     } else if (dealer.handValue == 21) {
       calculateWinner(player, dealer, blackjack: 2);
+      print("BLACKJACK DETECTED");
     }
   }
 
@@ -222,21 +265,28 @@ class GameScreenState extends State<GameScreen> {
 
     playerActions = actionButtons(roundEnd: true);
 
-    print("The dealer's hand: ${dealer.handValue}");
-    print("Your hand: ${player.handValue}");
+    // print("The dealer's hand: ${dealer.handValue}");
+    // print("Your hand: ${player.handValue}");
 
     if (player.hasBusted) {
       gameText = "The dealer wins.\n\nDealer's Total: ${dealer.handValue}";
+      _statUpdate.computerWins += 1;
     } else if (!player.hasBusted && dealer.hasBusted) {
       gameText =
           "The dealer busted. You win!\n\nDealer's Total: ${dealer.handValue}";
+      _statUpdate.playerWins += 1;
     } else if (dealer.handValue > player.handValue) {
       gameText = "The dealer wins\n\nDealer's Total: ${dealer.handValue}";
+      _statUpdate.computerWins += 1;
     } else if (player.handValue > dealer.handValue) {
       gameText = "You win!\n\nDealer's Total: ${dealer.handValue}";
+      _statUpdate.playerWins += 1;
     } else {
       gameText = "It's a tie!\n\nDealer's Total: ${dealer.handValue}";
     }
+
+    _statUpdate.roundsPlayed = _statUpdate.roundsPlayed + 1;
+    updateStats();
 
     switch (blackjack) {
       case 1:
@@ -251,24 +301,32 @@ class GameScreenState extends State<GameScreen> {
       default:
         break;
     }
+
+    print("Current Stats: ${_statUpdate.toMap()}");
+
     setState(() {});
   }
 
   void updateStats() {
     final databaseManager = DatabaseManager.getInstance();
     databaseManager.updateData2(dto: _statUpdate);
+    statData = _statUpdate.toMap();
+    print("UPDATING STATS: ${_statUpdate.toMap()}");
   }
 
-  
   void _loadData() async {
     final databaseManager = DatabaseManager.getInstance();
     List<Map> stats =
         await databaseManager.db.rawQuery('SELECT * FROM blackjack where id=1');
 
-    print("STATS:");
-    print(stats);
     statData = stats[0];
-    print(statData);
+    print("STATS LIST: $stats");
+    print("LOADING STATS: $statData");
+
+    _statUpdate.id = stats[0]["id"];
+    _statUpdate.computerWins = stats[0]["computerWins"];
+    _statUpdate.playerWins = stats[0]["playerWins"];
+    _statUpdate.roundsPlayed = stats[0]["roundsPlayed"];
 
     // var journalEntries = journalRecords.map((record) {
     //   return StatsDTO(
@@ -281,19 +339,35 @@ class GameScreenState extends State<GameScreen> {
     // }).toList();
   }
 
+  void resetStats() {
+    final databaseManager = DatabaseManager.getInstance();
+    final reset =
+        StatsDTO(id: 1, playerWins: 0, computerWins: 0, roundsPlayed: 0);
+    databaseManager.updateData2(dto: reset);
+    databaseManager.clearData(1);
+    databaseManager.addData(dto: reset);
+
+    _statUpdate.computerWins = 0;
+    _statUpdate.playerWins = 0;
+    _statUpdate.roundsPlayed = 0;
+
+    setState(() {
+      statData = reset.toMap();
+    });
+  }
 
   void createData() async {
     final databaseManager = DatabaseManager.getInstance();
-    
+
     _statUpdate.id = 1;
-    _statUpdate.playerWins = 1;
-    _statUpdate.computerWins = 2;
-    _statUpdate.roundsPlayed = 3;
-    print("CREATEDATA: $_statUpdate");
+    _statUpdate.playerWins = 0;
+    _statUpdate.computerWins = 0;
+    _statUpdate.roundsPlayed = 0;
+    print("CREATEDATA: ${_statUpdate.id}");
+    print("Rounds Played: ${_statUpdate.roundsPlayed}");
 
-    databaseManager.saveJournalEntry(dto: _statUpdate);
+    databaseManager.addData(dto: _statUpdate);
   }
-
 }
 
 class ActionButton extends StatelessWidget {
