@@ -10,8 +10,6 @@ import 'package:flip_card/flip_card.dart';
 import '../db/database_manager.dart';
 import '../db/stats_dto.dart';
 
-import 'dart:io';
-
 class GameScreen extends StatefulWidget {
   static final routeName = '/';
 
@@ -44,8 +42,7 @@ class GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    createData();
-    // _loadData();
+    loadData();
     createDeck(deck);
     dealInitialHand();
     playerActions = actionButtons(roundEnd: false);
@@ -55,6 +52,10 @@ class GameScreenState extends State<GameScreen> {
   Widget build(BuildContext context) {
     dealerHand = CurrentHand(cards: dealer.playerCards, hidden: true);
     playerHand = CurrentHand(cards: player.playerCards);
+    final winRate = statData["roundsPlayed"] > 0
+        ? ((statData["playerWins"] / statData["roundsPlayed"]) * 100)
+            .toStringAsFixed(2)
+        : 0;
     return SafeArea(
       child: Scaffold(
         endDrawer: Drawer(
@@ -71,16 +72,10 @@ class GameScreenState extends State<GameScreen> {
                 ),
                 color: Color(0xFF225374),
               ),
-              ListTile(
-                  title: Text("Rounds Played: ${statData["roundsPlayed"]}")),
-              Divider(thickness: 1,),
-              ListTile(title: Text("Player Wins: ${statData["playerWins"]}")),
-              Divider(thickness: 1,),
-              ListTile(
-                  title: Text("Computer Wins: ${statData["computerWins"]}")),
-              Divider(thickness: 1,),
-              ListTile(
-                  title: Text("Win Rate: ${((statData["playerWins"] / statData["roundsPlayed"]) * 100).toStringAsFixed(2)}%")),
+              statsTile(text: "Rounds Played: ${statData["roundsPlayed"]}"),
+              statsTile(text: "Player Wins: ${statData["playerWins"]}"),
+              statsTile(text: "Computer Wins: ${statData["computerWins"]}"),
+              statsTile(text: "Win Rate: $winRate%"),
               Container(
                 color: Colors.red,
                 child: ListTile(
@@ -95,8 +90,9 @@ class GameScreenState extends State<GameScreen> {
         ),
         backgroundColor: Colors.green[600],
         appBar: AppBar(
-          backgroundColor: Colors.green[900],
-          title: Text('Blackjack', style: TextStyle(color: Colors.white)),
+          toolbarHeight: 55,
+          backgroundColor: Colors.green[600],
+          elevation: 0.0,
         ),
         body: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -138,6 +134,21 @@ class GameScreenState extends State<GameScreen> {
     );
   }
 
+  Column statsTile({String text}) {
+    return Column(
+      children: [
+        Container(
+          child: Text(text),
+          alignment: Alignment.centerLeft,
+          padding: EdgeInsets.only(top: 10, bottom: 10, left: 20),
+        ),
+        Divider(
+          height: 1,
+        ),
+      ],
+    );
+  }
+
   String get playerTotal {
     return player.handValue > 21
         ? "Total: ${player.handValue} BUST"
@@ -146,7 +157,6 @@ class GameScreenState extends State<GameScreen> {
 
   void resetDeck() {
     print("Resetting Deck... ");
-    // print("Current Stats 1: ${_statUpdate.toMap()}");
     print("Cards left: ${deck.length}");
     if (deck.length < 26) {
       deck.clear();
@@ -163,7 +173,6 @@ class GameScreenState extends State<GameScreen> {
 
     determineBlackjack();
     setState(() {});
-    // print("Current Stats 2: ${_statUpdate.toMap()}");
   }
 
   void createDeck(List deck) {
@@ -182,12 +191,10 @@ class GameScreenState extends State<GameScreen> {
 
   void addCardsToHand(Player player) {
     for (var i = 0; i < player.cardsNeeded; i++) {
-      // if (player.cardCount < 5) {
       int cardLocation = random.nextInt(deck.length);
       CardModel card = deck[cardLocation];
       player.playerCards.add(card);
       deck.removeAt(cardLocation);
-      // }
     }
     playerHand = CurrentHand(cards: player.playerCards);
     player.cardsNeeded = 0;
@@ -252,13 +259,10 @@ class GameScreenState extends State<GameScreen> {
   void determineBlackjack() {
     if (player.handValue == 21 && dealer.handValue == 21) {
       calculateWinner(player, dealer, blackjack: 3);
-      print("BLACKJACK DETECTED");
     } else if (player.handValue == 21) {
       calculateWinner(player, dealer, blackjack: 1);
-      print("BLACKJACK DETECTED");
     } else if (dealer.handValue == 21) {
       calculateWinner(player, dealer, blackjack: 2);
-      print("BLACKJACK DETECTED");
     }
   }
 
@@ -271,9 +275,6 @@ class GameScreenState extends State<GameScreen> {
     cardKey.currentState.controller.forward();
 
     playerActions = actionButtons(roundEnd: true);
-
-    // print("The dealer's hand: ${dealer.handValue}");
-    // print("Your hand: ${player.handValue}");
 
     if (player.hasBusted) {
       gameText = "The dealer wins.\n\nDealer's Total: ${dealer.handValue}";
@@ -292,7 +293,8 @@ class GameScreenState extends State<GameScreen> {
       gameText = "It's a tie!\n\nDealer's Total: ${dealer.handValue}";
     }
 
-    _statUpdate.roundsPlayed = _statUpdate.roundsPlayed + 1;
+    _statUpdate.roundsPlayed += 1;
+
     updateStats();
 
     switch (blackjack) {
@@ -316,45 +318,17 @@ class GameScreenState extends State<GameScreen> {
 
   void updateStats() {
     final databaseManager = DatabaseManager.getInstance();
-    databaseManager.updateData2(dto: _statUpdate);
+    databaseManager.updateData(dto: _statUpdate);
     statData = _statUpdate.toMap();
     print("UPDATING STATS: ${_statUpdate.toMap()}");
-  }
-
-  void _loadData() async {
-    final databaseManager = DatabaseManager.getInstance();
-    // List<Map> stats =
-    //     await databaseManager.db.rawQuery('SELECT * FROM blackjack where id=1');
-
-    List<Map> stats = await databaseManager.getData();
-    print("STATS LOADED: $stats");
-
-    statData = stats[0];
-    print("STATS LIST: $stats");
-    print("LOADING STATS: $statData");
-
-    _statUpdate.id = stats[0]["id"];
-    _statUpdate.computerWins = stats[0]["computerWins"];
-    _statUpdate.playerWins = stats[0]["playerWins"];
-    _statUpdate.roundsPlayed = stats[0]["roundsPlayed"];
-
-    // var journalEntries = journalRecords.map((record) {
-    //   return StatsDTO(
-    //     id: record['id'],
-    //     title: record['title'],
-    //     body: record['body'],
-    //     rating: record['rating'],
-    //     dateTime: DateTime.parse(record['date']),
-    //   );
-    // }).toList();
   }
 
   void resetStats() {
     final databaseManager = DatabaseManager.getInstance();
     final reset =
         StatsDTO(id: 1, playerWins: 0, computerWins: 0, roundsPlayed: 0);
-    databaseManager.updateData2(dto: reset);
-    databaseManager.clearData(1);
+    databaseManager.updateData(dto: reset);
+    databaseManager.clearStats();
     databaseManager.addData(dto: reset);
 
     _statUpdate.computerWins = 0;
@@ -366,11 +340,10 @@ class GameScreenState extends State<GameScreen> {
     });
   }
 
-  void createData() async {
+  void loadData() async {
     final databaseManager = DatabaseManager.getInstance();
 
-    List<Map> stats =
-        await databaseManager.db.rawQuery('SELECT * FROM blackjack where id=1');
+    List<Map> stats = await databaseManager.getStats();
 
     print("Stats Length: ${stats.length}");
     print("Stats: $stats");
@@ -380,8 +353,7 @@ class GameScreenState extends State<GameScreen> {
       _statUpdate.playerWins = 0;
       _statUpdate.computerWins = 0;
       _statUpdate.roundsPlayed = 0;
-      // print("CREATEDATA: ${_statUpdate.id}");
-      // print("Rounds Played: ${_statUpdate.roundsPlayed}");
+
       databaseManager.addData(dto: _statUpdate);
     } else {
       statData = stats[0];
@@ -391,28 +363,5 @@ class GameScreenState extends State<GameScreen> {
       _statUpdate.roundsPlayed = stats[0]["roundsPlayed"];
       setState(() {});
     }
-  }
-}
-
-class ActionButton extends StatelessWidget {
-  final text;
-  final textColor;
-  final Function onPressed;
-  final buttonColor;
-
-  ActionButton({this.text, this.textColor, this.onPressed, this.buttonColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return RaisedButton(
-      shape: Border.all(width: 0.5),
-      child: Text(
-        text,
-        style: TextStyle(color: textColor),
-      ),
-      onPressed: onPressed,
-      elevation: 5,
-      color: buttonColor,
-    );
   }
 }

@@ -48,51 +48,34 @@ class DatabaseManager {
     });
   }
 
-  void updateData({StatsDTO dto}) {
-    db.transaction((txn) async {
-      await txn.rawInsert(
-        await rootBundle.loadString(SQL_INSERT),
-        [
-          dto.playerWins,
-          dto.computerWins,
-          dto.roundsPlayed,
-        ],
-      );
-    });
-  }
-
-  Future<void> updateData2({StatsDTO dto}) async {
+  Future<void> updateData({StatsDTO dto}) async {
     // Update the given Dog.
     await db.update(
       "blackjack",
       dto.toMap(),
-      // Ensure that the Dog has a matching id.
-      where: "id = ?",
-      // Pass the Dog's id as a whereArg to prevent SQL injection.
-      whereArgs: [dto.id],
+      // where: "id = 1",
+      // Pass the id as a whereArg to prevent SQL injection.
+      // whereArgs: [1],
     );
   }
 
-  Future<List<Map>> getData() async {
-    // Get a reference to the database.
+  Future<List<Map>> getStats() async {
+    // Query the table for current blackjack stats.
+    final List<Map<String, dynamic>> maps = await db.query('blackjack',
+    where: "id = ?",
+    whereArgs: [1]);
 
-    // Query the table for all The Dogs.
-    final List<Map<String, dynamic>> maps = await db.query('blackjack');
-
-    // Convert the List<Map<String, dynamic> into a List<Dog>.
+    // Convert the List<Map<String, dynamic> into a List.
     return maps;
   }
 
-  Future<void> clearData(int id) async {
-    // Get a reference to the database.
-
+  Future<void> clearStats() async {
     // Remove the Dog from the Database.
     await db.delete(
       'blackjack',
-      // Use a `where` clause to delete a specific dog.
-      where: "id = ?",
-      // Pass the Dog's id as a whereArg to prevent SQL injection.
-      whereArgs: [id],
+      where: "id = 1",
+      // Pass the id as a whereArg to prevent SQL injection.
+      whereArgs: [1],
     );
   }
 }
