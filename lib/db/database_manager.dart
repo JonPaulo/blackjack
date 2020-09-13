@@ -62,7 +62,6 @@ class DatabaseManager {
   }
 
   Future<void> updateData2({StatsDTO dto}) async {
-
     // Update the given Dog.
     await db.update(
       "blackjack",
@@ -74,17 +73,26 @@ class DatabaseManager {
     );
   }
 
+  Future<List<Map>> getData() async {
+    // Get a reference to the database.
+
+    // Query the table for all The Dogs.
+    final List<Map<String, dynamic>> maps = await db.query('blackjack');
+
+    // Convert the List<Map<String, dynamic> into a List<Dog>.
+    return maps;
+  }
+
   Future<void> clearData(int id) async {
-  // Get a reference to the database.
+    // Get a reference to the database.
 
-  // Remove the Dog from the Database.
-  await db.delete(
-    'blackjack',
-    // Use a `where` clause to delete a specific dog.
-    where: "id = ?",
-    // Pass the Dog's id as a whereArg to prevent SQL injection.
-    whereArgs: [id],
-  );
-}
-
+    // Remove the Dog from the Database.
+    await db.delete(
+      'blackjack',
+      // Use a `where` clause to delete a specific dog.
+      where: "id = ?",
+      // Pass the Dog's id as a whereArg to prevent SQL injection.
+      whereArgs: [id],
+    );
+  }
 }

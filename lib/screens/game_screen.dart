@@ -10,6 +10,8 @@ import 'package:flip_card/flip_card.dart';
 import '../db/database_manager.dart';
 import '../db/stats_dto.dart';
 
+import 'dart:io';
+
 class GameScreen extends StatefulWidget {
   static final routeName = '/';
 
@@ -43,7 +45,7 @@ class GameScreenState extends State<GameScreen> {
   void initState() {
     super.initState();
     createData();
-    _loadData();
+    // _loadData();
     createDeck(deck);
     dealInitialHand();
     playerActions = actionButtons(roundEnd: false);
@@ -71,9 +73,14 @@ class GameScreenState extends State<GameScreen> {
               ),
               ListTile(
                   title: Text("Rounds Played: ${statData["roundsPlayed"]}")),
+              Divider(thickness: 1,),
               ListTile(title: Text("Player Wins: ${statData["playerWins"]}")),
+              Divider(thickness: 1,),
               ListTile(
                   title: Text("Computer Wins: ${statData["computerWins"]}")),
+              Divider(thickness: 1,),
+              ListTile(
+                  title: Text("Win Rate: ${((statData["playerWins"] / statData["roundsPlayed"]) * 100).toStringAsFixed(2)}%")),
               Container(
                 color: Colors.red,
                 child: ListTile(
@@ -316,8 +323,11 @@ class GameScreenState extends State<GameScreen> {
 
   void _loadData() async {
     final databaseManager = DatabaseManager.getInstance();
-    List<Map> stats =
-        await databaseManager.db.rawQuery('SELECT * FROM blackjack where id=1');
+    // List<Map> stats =
+    //     await databaseManager.db.rawQuery('SELECT * FROM blackjack where id=1');
+
+    List<Map> stats = await databaseManager.getData();
+    print("STATS LOADED: $stats");
 
     statData = stats[0];
     print("STATS LIST: $stats");
@@ -359,14 +369,28 @@ class GameScreenState extends State<GameScreen> {
   void createData() async {
     final databaseManager = DatabaseManager.getInstance();
 
-    _statUpdate.id = 1;
-    _statUpdate.playerWins = 0;
-    _statUpdate.computerWins = 0;
-    _statUpdate.roundsPlayed = 0;
-    print("CREATEDATA: ${_statUpdate.id}");
-    print("Rounds Played: ${_statUpdate.roundsPlayed}");
+    List<Map> stats =
+        await databaseManager.db.rawQuery('SELECT * FROM blackjack where id=1');
 
-    databaseManager.addData(dto: _statUpdate);
+    print("Stats Length: ${stats.length}");
+    print("Stats: $stats");
+
+    if (stats.length == 0) {
+      _statUpdate.id = 1;
+      _statUpdate.playerWins = 0;
+      _statUpdate.computerWins = 0;
+      _statUpdate.roundsPlayed = 0;
+      // print("CREATEDATA: ${_statUpdate.id}");
+      // print("Rounds Played: ${_statUpdate.roundsPlayed}");
+      databaseManager.addData(dto: _statUpdate);
+    } else {
+      statData = stats[0];
+      _statUpdate.id = stats[0]["id"];
+      _statUpdate.computerWins = stats[0]["computerWins"];
+      _statUpdate.playerWins = stats[0]["playerWins"];
+      _statUpdate.roundsPlayed = stats[0]["roundsPlayed"];
+      setState(() {});
+    }
   }
 }
 
