@@ -1,5 +1,5 @@
 import 'package:flutter/services.dart';
-import 'journal_entry_dto.dart';
+import 'stats_dto.dart';
 import 'package:sqflite/sqflite.dart';
 
 const String CREATETABLE = 'assets/schema_create.sql.txt';
@@ -30,20 +30,47 @@ class DatabaseManager {
   }
 
   static void createTables(Database db, String sql) async {
+    print("CREATING TABLES");
     await db.execute(await rootBundle.loadString(CREATETABLE));
   }
 
-  void saveJournalEntry({JournalEntryDTO dto}) {
+  void saveJournalEntry({StatsDTO dto}) {
     db.transaction((txn) async {
       await txn.rawInsert(
         await rootBundle.loadString(SQL_INSERT),
         [
-          dto.title,
-          dto.body,
-          dto.rating,
-          dto.date.toString(),
+          dto.id,
+          dto.playerWins,
+          dto.computerWins,
+          dto.roundsPlayed,
         ],
       );
     });
+  }
+
+  void updateData({StatsDTO dto}) {
+    db.transaction((txn) async {
+      await txn.rawInsert(
+        await rootBundle.loadString(SQL_INSERT),
+        [
+          dto.playerWins,
+          dto.computerWins,
+          dto.roundsPlayed,
+        ],
+      );
+    });
+  }
+
+  Future<void> updateData2({StatsDTO dto}) async {
+
+    // Update the given Dog.
+    await db.update(
+      DATABASE_FILENAME,
+      dto.toMap(),
+      // Ensure that the Dog has a matching id.
+      where: "id = ?",
+      // Pass the Dog's id as a whereArg to prevent SQL injection.
+      whereArgs: [dto.id],
+    );
   }
 }

@@ -7,6 +7,9 @@ import 'package:blackjack/widgets/current_hand.dart';
 
 import 'package:flip_card/flip_card.dart';
 
+import '../db/database_manager.dart';
+import '../db/stats_dto.dart';
+
 class GameScreen extends StatefulWidget {
   static final routeName = '/';
 
@@ -28,10 +31,15 @@ class GameScreenState extends State<GameScreen> {
   String gameText = "";
   Widget playerActions;
 
+  final _statUpdate = StatsDTO();
+  var statData;
+
   final GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
   @override
   void initState() {
     super.initState();
+    createData();
+    _loadData();
     createDeck(deck);
     dealInitialHand();
     playerActions = actionButtons(roundEnd: false);
@@ -39,6 +47,7 @@ class GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print("IN BUILD. STAT DATA: $statData");
     dealerHand = CurrentHand(cards: dealer.playerCards, hidden: true);
     playerHand = CurrentHand(cards: player.playerCards);
     return SafeArea(
@@ -244,6 +253,47 @@ class GameScreenState extends State<GameScreen> {
     }
     setState(() {});
   }
+
+  void updateStats() {
+    final databaseManager = DatabaseManager.getInstance();
+    databaseManager.updateData2(dto: _statUpdate);
+  }
+
+  
+  void _loadData() async {
+    final databaseManager = DatabaseManager.getInstance();
+    List<Map> stats =
+        await databaseManager.db.rawQuery('SELECT * FROM blackjack where id=1');
+
+    print("STATS:");
+    print(stats);
+    statData = stats[0];
+    print(statData);
+
+    // var journalEntries = journalRecords.map((record) {
+    //   return StatsDTO(
+    //     id: record['id'],
+    //     title: record['title'],
+    //     body: record['body'],
+    //     rating: record['rating'],
+    //     dateTime: DateTime.parse(record['date']),
+    //   );
+    // }).toList();
+  }
+
+
+  void createData() async {
+    final databaseManager = DatabaseManager.getInstance();
+    
+    _statUpdate.id = 1;
+    _statUpdate.playerWins = 1;
+    _statUpdate.computerWins = 2;
+    _statUpdate.roundsPlayed = 3;
+    print("CREATEDATA: $_statUpdate");
+
+    databaseManager.saveJournalEntry(dto: _statUpdate);
+  }
+
 }
 
 class ActionButton extends StatelessWidget {

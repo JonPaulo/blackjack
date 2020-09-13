@@ -1,1 +1,1 @@
-INSERT INTO journal_entries(title, body, rating, date) VALUES(?, ?, ?, ?);
+INSERT INTO blackjack(id, playerWins, computerWins, roundsPlayed) VALUES(?, ?, ?, ?);
